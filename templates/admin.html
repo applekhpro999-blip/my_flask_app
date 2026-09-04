@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="km">
+<head>
+    <meta charset="UTF-8">
+    <title>ប្រព័ន្ធគ្រប់គ្រង Admin - បង្កើត License Key</title>
+    <link href="https://fonts.googleapis.com/css2?family=Battambang:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body { background: #0f0c29; color: white; font-family: 'Battambang', sans-serif; text-align: center; padding: 50px; }
+        .card { background: rgba(255,255,255,0.05); padding: 30px; border-radius: 15px; display: inline-block; max-width: 450px; width: 100%; box-shadow: 0 10px 25px rgba(0,0,0,0.5); }
+        .btn { background: #00b09b; color: white; padding: 12px 20px; border: none; border-radius: 8px; cursor: pointer; font-size: 16px; margin-top: 15px; width: 100%; font-family: 'Battambang', sans-serif; }
+        .btn:hover { background: #008f7a; }
+        select { width: 100%; padding: 10px; border-radius: 8px; background: #222; color: white; border: 1px solid #444; font-family: 'Battambang', sans-serif; margin-top: 10px; }
+        .result-box { margin-top: 20px; background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; display: none; text-align: left; }
+        .result-box p { margin: 5px 0; font-size: 14px; }
+        .key-text { color: #00f2fe; font-weight: bold; font-family: monospace; font-size: 16px; }
+        .back-link { display: inline-block; margin-top: 20px; color: #ccc; text-decoration: none; font-size: 14px; }
+    </style>
+</head>
+<body>
+
+    <div class="card">
+        <h2>🛠️ Admin Panel - បង្កើត Key</h2>
+        <p>ជ្រើសរើសគម្រោងដែលអតិថិជនបានបង់ប្រាក់៖</p>
+        
+        <form id="keyForm">
+            <select name="plan" id="plan">
+                <option value="1_month">គម្រោង ១ ខែ ($10)</option>
+                <option value="3_months">គម្រោង ៣ ខែ ($15)</option>
+            </select>
+            <button type="submit" class="btn">បង្កើត License Key ថ្មី</button>
+        </form>
+
+        <div class="result-box" id="resultBox">
+            <p>ស្ថានភាព៖ <b style="color: #4CAF50;">ជោគជ័យ!</b></p>
+            <p>License Key: <span class="key-text" id="generatedKey"></span></p>
+            <p>ថ្ងៃផុតកំណត់: <span id="expiresAt" style="color: #ffeb3b;"></span></p>
+        </div>
+
+        <br>
+        <a href="/" class="back-link">⬅️ ត្រឡប់ទៅទំព័រដើម</a>
+    </div>
+
+    <script>
+        document.getElementById('keyForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const plan = document.getElementById('plan').value;
+
+            const response = await fetch('/admin/generate-key', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: `plan=${plan}`
+            });
+
+            const data = await response.json();
+            if(data.status === 'success') {
+                document.getElementById('generatedKey').innerText = data.key;
+                document.getElementById('expiresAt').innerText = data.expires_at;
+                document.getElementById('resultBox').style.display = 'block';
+            } else {
+                alert('មានបញ្ាក្នុងការបង្កើត Key!');
+            }
+        });
+    </script>
+</body>
+</html>

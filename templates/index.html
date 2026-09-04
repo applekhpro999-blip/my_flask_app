@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="km">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Brave YouTube Automation</title>
+    <!-- 🌟 Add Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Battambang:wght@400;700&family=PreahVihear&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Poppins', 'Battambang', sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+            color: #fff;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow-y: auto;
+            padding: 20px 0;
+        }
+
+        /* 🌟 Welcome Screen Animation */
+        #welcome-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #0f0c29;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        }
+
+        #welcome-screen h1 {
+            font-family: 'PreahVihear', sans-serif;
+            font-size: 3rem;
+            color: #ff0055;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            text-shadow: 0 0 20px rgba(255, 0, 85, 0.6), 0 0 40px rgba(255, 0, 85, 0.4);
+            animation: pulseZoom 2s ease infinite;
+            text-align: center;
+            padding: 0 20px;
+        }
+
+        @keyframes pulseZoom {
+            0% { transform: scale(0.9); opacity: 0.8; }
+            50% { transform: scale(1.08); opacity: 1; text-shadow: 0 0 30px #ff0055, 0 0 60px #ff0055; }
+            100% { transform: scale(0.9); opacity: 0.8; }
+        }
+
+        /* 🌟 3D Main Container Card */
+        .container {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5), inset 0 1px 1px rgba(255, 255, 255, 0.2);
+            width: 580px;
+            max-width: 95%;
+            position: relative;
+        }
+
+        /* 🌟 ស្តាយសម្រាប់ប៊ូតុងសញ្ញាសម្គាល់ (Help Icon) */
+        .help-icon {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: linear-gradient(135deg, #2196F3, #00BCD4);
+            color: white;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: bold;
+            font-size: 1rem;
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(0, 188, 212, 0.4);
+            transition: transform 0.2s ease;
+        }
+        .help-icon:hover {
+            transform: scale(1.1);
+        }
+
+        h2 {
+            font-family: 'PreahVihear', sans-serif;
+            font-size: 1.6rem;
+            margin-bottom: 25px;
+            text-align: center;
+            color: #00f2fe;
+            text-shadow: 0 0 10px rgba(0, 242, 254, 0.4);
+            letter-spacing: 0.5px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 0.95rem;
+            color: #eaeaea;
+            font-weight: 500;
+        }
+
+        input[type="text"], input[type="number"], select {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            color: #fff;
+            font-size: 0.95rem;
+            outline: none;
+            transition: all 0.3s ease;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.5);
+        }
+
+        input[type="text"], input[type="number"] {
+            width: 100%;
+            padding: 12px 15px;
+        }
+
+        input[type="text"]:focus, input[type="number"]:focus, select:focus {
+            border-color: #00f2fe;
+            box-shadow: 0 0 10px rgba(0, 242, 254, 0.5), inset 0 2px 4px rgba(0,0,0,0.5);
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 10px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            color: #fff;
+            transition: all 0.2s ease;
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            opacity: 0.95;
+        }
+
+        .btn-run { background: linear-gradient(135deg, #00c853, #b9f6ca); color: #003300; font-weight: 700; }
+        .btn-stop { background: rgba(255, 75, 75, 0.2); border: 1px solid #ff4b4b; color: #ff8080; }
+        .btn-close { background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.2); color: #fff; }
+        .btn-ip { background: rgba(255, 193, 7, 0.2); border: 1px solid #ffc107; color: #ffe082; }
+        .btn-clean { background: rgba(33, 150, 243, 0.2); border: 1px solid #2196F3; color: #64b5f6; }
+        .btn-proxy { background: rgba(156, 39, 176, 0.2); border: 1px solid #9c27b0; color: #ce93d8; }
+
+        /* 🌟 កែសម្រួល Layout ក្នុង Proxy Modal ឱ្យមានរបៀបរៀបរយមិនជាន់គ្នា */
+        #proxyModal .modal-row {
+            margin-bottom: 15px; 
+            border-bottom: 1px solid #444; 
+            padding-bottom: 12px; 
+            display: grid; 
+            grid-template-columns: 2fr 2.5fr 1.5fr 1.5fr; 
+            gap: 8px; 
+            align-items: center;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 🌟 Welcome Screen Animation -->
+    <div id="welcome-screen" style="display: none;">
+        <h1>Welcome to Team Youtuber</h1>
+    </div>
+
+    <!-- 🌟 Main Dashboard UI -->
+    <div class="container">
+        
+        <!-- សញ្ញាសម្គាល់សម្រាប់បើកសេចក្ដីណែនាំ -->
+        <div class="help-icon" onclick="openGuideModal()" title="សេចក្ដីណែនាំការប្រើប្រាស់">?</div>
+
+        <h2>ប្រព័ន្ធស្វ័យប្រវត្តិ YouTube</h2>
+        <p style="text-align: center; color: #ffeb3b; font-size: 0.95rem; margin-top: -15px; margin-bottom: 20px; font-weight: 600; text-shadow: 0 0 5px rgba(255, 235, 59, 0.3);">Tools នេះសម្រាប់ videos 1 ម៉ោង</p>
+        
+        <form id="runForm" action="/run" method="POST">
+            <div class="form-group">
+                <label for="query">លីងវីដេអូ ឬ Keyword:</label>
+                <input type="text" id="query" name="query" placeholder="បញ្ចូលលីង ឬពាក្យគន្លឹះ..." required>
+            </div>
+            
+            <div class="form-group" style="margin-bottom: 15px;">
+                <label for="num_profiles">ចំនួន Profiles (អតិបរមា 20):</label>
+                <input type="number" id="num_profiles" name="num_profiles" value="5" min="1" max="20">
+            </div>
+            
+            <!-- ប៊ូតុង Run -->
+            <button type="submit" class="btn-run" style="width: 100%; padding: 14px; font-size: 1.05rem; margin-bottom: 15px;">🚀 ចាប់ផ្ដើមបើក (Run Automation)</button>
+        </form>
+
+        <!-- 🌟 ប្រព័ន្ធរៀបចំប៊ូតុងជាក្រុមស្អាត (Grid System) -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+            
+            <form action="/stop" method="POST">
+                <button type="submit" class="btn-stop">⏹ បញ្ឈប់បន្ទាន់</button>
+            </form>
+            <form action="/close" method="POST">
+                <button type="submit" class="btn-close">បិទ Profiles ទាំងអស់</button>
+            </form>
+
+            <form action="/clear-tabs-random" method="POST">
+                <button type="submit" class="btn-clean">🧹 Clear Tabs</button>
+            </form>
+            <form action="/disk-cleanup" method="POST">
+                <button type="submit" class="btn-clean">🗂 Disk Cleanup</button>
+            </form>
+
+            <form action="/reset-ip" method="POST">
+                <button type="submit" class="btn-ip">🌐 Reset IP</button>
+            </form>
+            <button type="button" onclick="openProxyModal()" class="btn-proxy">កែប្រែ Proxy</button>
+
+        </div>
+    </div>
+
+    <!-- 🌟 ផ្ទាំង Modal សម្រាប់សេចក្ដីណែនាំ (Guide Modal) -->
+    <div id="guideModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:3000; justify-content:center; align-items:center;">
+        <div style="background: linear-gradient(135deg, #1a1a2e, #16213e); padding: 30px; border-radius: 15px; width: 90%; max-width: 600px; max-height: 85vh; overflow-y: auto; text-align: left; color: white; border: 2px solid #2196F3; box-shadow: 0 0 25px rgba(33, 150, 243, 0.5);">
+            <h3 style="color: #00f2fe; margin-bottom: 15px; font-size: 1.3rem; text-align: center;">📖 សេចក្ដីណែនាំการប្រើប្រាស់ និងការការពារ</h3>
+            
+            <div style="font-size: 0.9rem; line-height: 1.6; color: #ddd;">
+                <p style="margin-bottom: 10px; color: #ffeb3b;"><b>១. ការរៀបចំមុនពេលចាប់ផ្តើម:</b></p>
+                <ul style="margin-left: 20px; margin-bottom: 15px;">
+                    <li>កុំបើកចំនួន Profiles ច្រើនលើសលុបពេក (កម្រិតសមស្រប <b>២០ Profiles</b>) ដើម្បីការពារការស្ទះម៉ាស៊ីន។</li>
+                </ul>
+
+                <p style="margin-bottom: 10px; color: #ffeb3b;"><b>២. វិធីសាស្ត្រការពារ កុំឱ្យ YouTube ចាប់បាន (Anti-Detection):</b></p>
+                <ul style="margin-left: 20px; margin-bottom: 15px;">
+                    <li><b>ប្រើប្រាស់ IP Proxy:</b> មិនត្រូវប្រើ IP តែមួយសម្រាប់គ្រប់ Profiles ទាំងអស់ទេ សូមកំណត់ Proxy ផ្សេងៗគ្នា។</li>
+                    <li><b>ការថែទាំប្រព័ន្ធ:</b> ប្រើប្រាស់ប៊ូតុង <i>Clear Tabs</i> និង <i>Disk Cleanup</i> ជាប្រចាំដើម្បីលុប Cache។</li>
+                </ul>
+            </div>
+
+            <div style="text-align: center; margin-top: 20px;">
+                <button type="button" onclick="closeGuideModal()" style="background: #f44336; color: white; border: none; padding: 10px 25px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 0.95rem; width: auto;">យល់ព្រម / បិទ</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 🌟 ផ្ទាំង Modal សម្រាប់ Proxy -->
+    <div id="proxyModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); z-index:1000; justify-content:center; align-items:center;">
+        <div style="background:#222; padding:20px; border-radius:10px; width:95%; max-width:750px; max-height:85vh; overflow-y:auto; color:white;">
+            <h3 style="margin-bottom: 15px; text-align: center;">កំណត់ និងតេស្ត IP Proxy សម្រាប់ Profiles</h3>
+            
+            <!-- 🌟 បន្ថែមប្រអប់សម្រាប់ Auto Add Proxy ទីនេះ -->
+            <div style="background: rgba(0,0,0,0.3); padding: 12px; border-radius: 8px; margin-bottom: 15px; border: 1px dashed #00f2fe;">
+                <label style="font-size: 12px; color: #00f2fe; margin-bottom: 5px; display: block;">📥 បញ្ចូលបញ្ជី Proxy (ទ្រង់ទ្រាយ IP:Port មួយក្នុងមួយបន្ទាត់):</label>
+                <textarea id="bulkProxyInput" rows="3" placeholder="192.168.1.10:8080&#10;192.168.1.11:8080" style="width: 100%; background: #111; color: #fff; border: 1px solid #444; padding: 8px; border-radius: 5px; font-size: 11px; resize: vertical;"></textarea>
+                <button type="button" onclick="autoAddProxies()" style="background: linear-gradient(135deg, #00c853, #b9f6ca); color: #003300; padding: 6px 12px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 11px; margin-top: 8px;">⚡ Auto Add Proxy ចូល Profiles ទាំងអស់</button>
+            </div>
+
+            <form action="/save-proxy" method="POST">
+                {% for profile in profiles %}
+                <div class="modal-row">
+                    <div>
+                        <label style="display:block; font-weight:bold; font-size: 11px; color: #ffeb3b; margin: 0; word-break: break-all;">{{ profile.name }}</label>
+                    </div>
+
+                    <div style="display: flex; gap: 4px; align-items: center;">
+                        <input type="text" id="ip_{{ profile.id }}" name="ip_{{ profile.id }}" 
+                               value="{% if profile.proxy %}{{ profile.proxy.replace('http://', '').replace('https://', '').split(':')[0] }}{% endif %}" 
+                               placeholder="IP Address" style="width: 70%; padding: 5px; font-size: 11px;">
+                        <input type="text" id="port_{{ profile.id }}" name="port_{{ profile.id }}" 
+                               value="{% if profile.proxy and ':' in profile.proxy %}{{ profile.proxy.split(':')[-1] }}{% endif %}" 
+                               placeholder="Port" style="width: 30%; padding: 5px; font-size: 11px;">
+                    </div>
+
+                    <div style="display: flex; gap: 3px; justify-content: center;">
+                        <button type="button" onclick="testProxy({{ profile.id }})" style="background: #2196F3; color: white; padding: 5px 6px; border: none; border-radius: 4px; cursor: pointer; font-size: 10px;">Connect</button>
+                        <button type="button" onclick="disconnectProxy({{ profile.id }})" style="background: #ff9800; color: white; padding: 5px 6px; border: none; border-radius: 4px; cursor: pointer; font-size: 10px;">Off</button>
+                    </div>
+
+                    <div id="status_{{ profile.id }}" style="text-align: right; font-size: 11px;">
+                        <span style="color: gray;">
+                            {% if profile.proxy %}
+                                បានរក្សាទុក (Saved)
+                            {% else %}
+                                មិនទាន់តេស្ត
+                            {% endif %}
+                        </span>
+                    </div>
+                </div>
+                {% endfor %}
+
+                <div style="text-align: right; margin-top: 15px;">
+                    <button type="button" onclick="closeProxyModal()" style="background: #f44336; color: white; padding: 8px 15px; border: none; border-radius: 4px; cursor: pointer; margin-right: 10px; width: auto; display: inline-block;">បិទ</button>
+                    <button type="submit" style="background: #4CAF50; color: white; padding: 8px 15px; border: none; border-radius: 4px; cursor: pointer; width: auto; display: inline-block;">រក្សាទុក (Save)</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 🌟 JavaScript Scripts -->
+    <script>
+        window.addEventListener('DOMContentLoaded', (event) => {
+            if (!sessionStorage.getItem('welcomed')) {
+                let welcomeScreen = document.getElementById('welcome-screen');
+                welcomeScreen.style.display = 'flex';
+                
+                setTimeout(() => {
+                    welcomeScreen.style.display = 'none';
+                    sessionStorage.setItem('welcomed', 'true');
+                }, 3500);
+            }
+        });
+
+        /* 🌟 កូដសម្រាប់បើក/បិទ ផ្ទាំង Modal ផ្សេងៗ */
+        function openGuideModal() {
+            document.getElementById('guideModal').style.display = 'flex';
+        }
+
+        function closeGuideModal() {
+            document.getElementById('guideModal').style.display = 'none';
+        }
+
+        function openProxyModal() {
+            document.getElementById('proxyModal').style.display = 'flex';
+        }
+
+        function closeProxyModal() {
+            document.getElementById('proxyModal').style.display = 'none';
+        }
+   
+        function disconnectProxy(id) {
+            document.getElementById('ip_' + id).value = "";
+            document.getElementById('port_' + id).value = "";
+            document.getElementById('status_' + id).innerHTML = '<span style="color: gray;">មិនទាន់តេស្ត</span>';
+        }
+
+        /* 🌟 មុខងារ Auto Add Proxy ចូលក្នុង Profiles ទាំងអស់ */
+        function autoAddProxies() {
+            let text = document.getElementById('bulkProxyInput').value.trim();
+            if (!text) {
+                alert('សូមបញ្ចូលបញ្ជី Proxy ជាមុនសិន!');
+                return;
+            }
+
+            let lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+            
+            // រកមើល input ប្រអប់ IP និង Port ទាំងអស់ដែលមាននៅលើหน้า Modal
+            let ipInputs = document.querySelectorAll('input[id^="ip_"]');
+            let portInputs = document.querySelectorAll('input[id^="port_"]');
+
+            for (let i = 0; i < ipInputs.length; i++) {
+                if (i < lines.length) {
+                    let parts = lines[i].split(':');
+                    let ip = parts[0] || '';
+                    let port = parts[1] || '';
+
+                    ipInputs[i].value = ip;
+                    portInputs[i].value = port;
+
+                    // ดึง Profile ID ចេញពី id របស់ input (ឧទាហរណ៍ ip_1 -> 1)
+                    let profileId = ipInputs[i].id.split('_')[1];
+                    let statusDiv = document.getElementById('status_' + profileId);
+                    if (statusDiv) {
+                        statusDiv.innerHTML = '<span style="color: #00c853;">បានទាញចូល (Auto Added)</span>';
+                    }
+                }
+            }
+            alert('បានបញ្ចូល Proxy ទៅក្នុង Profiles ដោយជោគជ័យ!');
+        }
+
+        function testProxy(profileId) {
+            let statusDiv = document.getElementById('status_' + profileId);
+            let ipVal = document.getElementById('ip_' + profileId).value.trim();
+            let portVal = document.getElementById('port_' + profileId).value.trim();
+
+            statusDiv.innerHTML = '<span style="color: orange;">កំពុង Connect...</span>';
+            
+            fetch('/test-proxy/' + profileId, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ ip: ipVal, port: portVal })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    statusDiv.innerHTML = `<span style="color: #00bcd4; font-weight: bold;">🔵 Connected (${data.country || 'OK'})</span>`;
+                } else {
+                    statusDiv.innerHTML = `<span style="color: #f44336; font-weight: bold;">❌ មិនដំណើរการ</span>`;
+                }
+            })
+            .catch(error => {
+                statusDiv.innerHTML = '<span style="color: #f44336; font-weight: bold;">❌ Error</span>';
+            });
+        }
+    </script>
+
+</body>
+</html>

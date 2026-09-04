@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="km">
+<head>
+    <meta charset="UTF-8">
+    <title>ទិញគម្រោង Premium</title>
+    <link href="https://fonts.googleapis.com/css2?family=Battambang:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body { background: #0f0c29; color: white; font-family: 'Battambang', sans-serif; text-align: center; padding: 30px; }
+        .card { background: rgba(255,255,255,0.05); padding: 25px; border-radius: 15px; display: inline-block; max-width: 400px; width: 100%; box-shadow: 0 10px 25px rgba(0,0,0,0.5); }
+        .price { color: #00f2fe; font-size: 22px; font-weight: bold; margin: 15px 0; }
+        .qr-img { width: 220px; height: auto; background: white; padding: 10px; border-radius: 10px; margin: 15px 0; }
+        .btn { background: #00b09b; color: white; padding: 10px 20px; border: none; border-radius: 8px; cursor: pointer; font-size: 16px; margin-top: 15px; width: 100%; text-decoration: none; display: inline-block; }
+        .telegram-contact { margin-top: 20px; font-size: 14px; color: #ccc; }
+        .telegram-contact a { color: #0088cc; text-decoration: none; font-weight: bold; }
+        .account-info { background: rgba(0,0,0,0.2); padding: 10px; border-radius: 8px; margin-top: 10px; font-size: 14px; color: #ffeb3b; }
+    </style>
+</head>
+<body>
+
+    <div class="card">
+        <h2>ទិញគម្រោង Premium</h2>
+        <p>សូមជ្រើសរើសគម្រោងដែលលោកអ្នកចង់ទិញ៖</p>
+        
+        <div style="margin: 15px 0;">
+            <label><input type="radio" name="plan" value="1_month" checked onclick="changePlan('10$.jpg', 10, '១ ខែ')"> គម្រោង ១ ខែ</label> &nbsp;&nbsp;
+            <label><input type="radio" name="plan" value="3_months" onclick="changePlan('15$.jpg', 15, '៣ ខែ')"> គម្រោង ៣ ខែ</label>
+        </div>
+
+        <div class="price" id="priceDisplay">តម្លៃ: 10$ (១ ខែ)</div>
+
+        <!-- QR Code រូបភាពនឹងប្តូរតាមการជ្រើសរើស -->
+        <img id="qrImage" src="{{ url_for('static', filename='images/10$.jpg') }}" alt="ABA QR Code" class="qr-img">
+        
+        <div class="account-info">
+            ឈ្មោះ: <b>EOURN BUNTHOEUN</b><br>
+            លេខគណនី: <b>003 532 410</b>
+        </div>
+
+        <div class="telegram-contact">
+            បង់ប្រាក់រួចសូមផ្ញើ Slip មកកាន់ Telegram៖ <br>
+            <a href="https://t.me/MrIOS9999" target="_blank">@MrIOS9999</a>
+        </div>
+        
+        <a href="/" class="btn" style="background: #666;">ត្រឡប់ក្រោយ</a>
+    </div>
+
+    <script>
+        function changePlan(imageName, price, text) {
+            document.getElementById('priceDisplay').innerText = `តម្លៃ: ${price}$ (${text})`;
+            document.getElementById('qrImage').src = `/static/images/${imageName}`;
+        }
+    </script>
+</body>
+</html>
