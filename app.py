@@ -17,8 +17,9 @@ import json
 import websocket
 import shutil
 
-import random
+from config import PROFILES
 
+# Consolidated Global Pools
 USER_AGENTS_POOL = [
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36",
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.6533.100 Safari/537.36",
@@ -34,9 +35,14 @@ SCREEN_RESOLUTIONS = [
     {"width": 1440, "height": 900}
 ]
 
-pyautogui.FAILSAFE = True
+WEBGL_RENDERERS_POOL = [
+    {"vendor": "Google Inc. (NVIDIA)", "renderer": "ANGLE (NVIDIA, NVIDIA GeForce RTX 3060 Direct3D11 vs_5_0 ps_5_0)"},
+    {"vendor": "Google Inc. (AMD)", "renderer": "ANGLE (AMD, AMD Radeon RX 6700 XT Direct3D11 vs_5_0 ps_5_0)"},
+    {"vendor": "Google Inc. (Intel)", "renderer": "ANGLE (Intel, Intel(R) Iris(R) Xe Graphics Direct3D11 vs_5_0 ps_5_0)"},
+    {"vendor": "Google Inc. (NVIDIA)", "renderer": "ANGLE (NVIDIA, NVIDIA GeForce GTX 1660 SUPER Direct3D11 vs_5_0 ps_5_0)"}
+]
 
-from config import PROFILES
+pyautogui.FAILSAFE = True
 
 app = Flask(__name__)
 app.secret_key = 'super_secret_key_random_string_here'  
@@ -46,6 +52,10 @@ init_db()
 
 is_running = False
 status_lock = threading.Lock()
+run_counter = 0
+counter_lock = threading.Lock()
+search_history_cache = {}
+history_lock = threading.Lock()
 
 limiter = Limiter(
     key_func=get_remote_address,  
@@ -57,7 +67,7 @@ limiter = Limiter(
 def get_video_info_via_ytdlp(url):
     default_duration = 3600  
     try:
-        selected_user_agent = PROFILES[0]['user_agent'] if PROFILES else 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36'
+        selected_user_agent = PROFILES[0]['user_agent'] if PROFILES else USER_AGENTS_POOL[0]
         
         ydl_opts = {
             'quiet': True,
@@ -129,28 +139,6 @@ def human_like_move(target_x, target_y):
         
         pyautogui.moveTo(x, y)
         time.sleep(random.uniform(0.008, 0.02))
-
-USER_AGENTS_POOL = [
-    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36",
-    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.6533.100 Safari/537.36",
-    "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:129.0) Gecko/20100101 Firefox/129.0",
-    "Mozilla/5.0 (Windows NT 11.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36",
-    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36"
-]
-
-WEBGL_RENDERERS_POOL = [
-    {"vendor": "Google Inc. (NVIDIA)", "renderer": "ANGLE (NVIDIA, NVIDIA GeForce RTX 3060 Direct3D11 vs_5_0 ps_5_0)"},
-    {"vendor": "Google Inc. (AMD)", "renderer": "ANGLE (AMD, AMD Radeon RX 6700 XT Direct3D11 vs_5_0 ps_5_0)"},
-    {"vendor": "Google Inc. (Intel)", "renderer": "ANGLE (Intel, Intel(R) Iris(R) Xe Graphics Direct3D11 vs_5_0 ps_5_0)"},
-    {"vendor": "Google Inc. (NVIDIA)", "renderer": "ANGLE (NVIDIA, NVIDIA GeForce GTX 1660 SUPER Direct3D11 vs_5_0 ps_5_0)"}
-]
-
-SCREEN_RESOLUTIONS = [
-    {"width": 1366, "height": 768},
-    {"width": 1920, "height": 1080},
-    {"width": 1536, "height": 864},
-    {"width": 1440, "height": 900}
-]
 
 def apply_stealth_spoofing(ws, profile):
     vendor = profile.get('webgl_vendor', 'Google Inc. (NVIDIA)')
@@ -235,7 +223,6 @@ def apply_stealth_spoofing(ws, profile):
     except Exception as e:
         print(f"Error applying stealth spoofing: {e}")
 
-
 def perform_human_engagement(profile):
     ws = None
     try:
@@ -258,7 +245,6 @@ def perform_human_engagement(profile):
             return
 
         ws = websocket.create_connection(target_tab['webSocketDebuggerUrl'], timeout=3)
-        
         apply_stealth_spoofing(ws, profile)
 
         def execute_js(js_code):
@@ -331,7 +317,6 @@ def perform_human_engagement(profile):
             time.sleep(random.uniform(5.0, 8.5))
 
         read_comment_time = random.uniform(4, 8) * speed_modifier
-        
         check_video_playing_js = """
         (function() {
             let video = document.querySelector('video');
@@ -412,7 +397,6 @@ def run_single_profile_full_process(profile, youtube_url, duration):
                 "--test-type",
                 "--disable-notifications",
                 "--disable-popup-blocking",
-
                 site
             ]
             if profile.get("proxy"):
@@ -440,7 +424,7 @@ def run_single_profile_full_process(profile, youtube_url, duration):
             f"--window-position={profile['pos_x']},{profile['pos_y']}",
             f"--user-agent={profile['user_agent']}",
             "--force-device-scale-factor=0.75",
-            f"--enable-features=NetworkService",
+            "--enable-features=NetworkService",
             f"--lang={profile['lang']}",
             f"--timezone={profile['timezone']}",
             f"--remote-debugging-port={9222 + profile['id']}",
@@ -467,22 +451,12 @@ def run_single_profile_full_process(profile, youtube_url, duration):
             "--disk-cache-dir=nul",
             "--no-restore-state",
             "--test-type",
-            "--disable-notifications",
-            "--disable-popup-blocking",
-
+            "--disable-notifications"
         ]
 
         hardware_spoof_args = [
-            "--disable-blink-features=AutomationControlled",
-            "--exclude-switches=enable-automation",
-            "--disable-infobars",
-            f"--enable-features=NetworkService,NetworkServiceInProcess",
             "--disable-component-update",
             "--disable-client-side-phishing-detection",
-            "--disable-sync",
-            "--metrics-recording-only",
-            "--no-first-run",
-            "--disable-default-apps",
             f"--hardware-concurrency={random.choice([4, 6, 8, 12])}",
             "--force-webrtc-ip-handling-policy=disable_non_proxied_udp",
             "--disable-features=WebRtcHideLocalIpsWithMdns",
@@ -541,12 +515,6 @@ def run_single_profile_full_process(profile, youtube_url, duration):
     except Exception as e:
         print(f"បញ្ហាលើ {profile['name']}: {e}")
 
-run_counter = 0
-counter_lock = threading.Lock()
-
-search_history_cache = {}
-history_lock = threading.Lock()
-
 @app.route('/run', methods=['POST'])
 @limiter.limit("5 per minute")
 def run_automation():
@@ -575,15 +543,9 @@ def run_automation():
     
     input_url = request.form.get('query', '').strip()
     
-    try:
-        requested_count = int(request.form.get('num_profiles', 10))
-    except ValueError:
-        requested_count = 10
-    
     with history_lock:
         if input_url:
             current_count = search_history_cache.get(input_url, 0)
-            
             if current_count >= 2:
                 with status_lock:
                     is_running = False
@@ -594,7 +556,6 @@ def run_automation():
                     <a href='/' style="padding: 10px 20px; background: #2196F3; color: white; text-decoration: none; border-radius: 5px; display: inline-block; margin-top: 20px;">ត្រឡប់ក្រោយ</a>
                 </div>
                 """
-            
             search_history_cache[input_url] = current_count + 1
     
     def background_task():
@@ -651,10 +612,9 @@ def run_automation():
                 profile_youtube_url = f"https://www.youtube.com/results?search_query={encoded_query}&autoplay=1"
 
                 def profile_video_session(p, initial_url):
-                    current_url = initial_url
                     target_watch_time = random.randint(3000, 3300) 
                     
-                    t_proc = threading.Thread(target=run_single_profile_full_process, args=(p, current_url, target_watch_time))
+                    t_proc = threading.Thread(target=run_single_profile_full_process, args=(p, initial_url, target_watch_time))
                     t_proc.daemon = True
                     t_proc.start()
                     
@@ -739,47 +699,6 @@ def stop_process():
     except Exception as e:
         return redirect('/')
 
-@app.route('/random-play', methods=['POST'])
-@limiter.limit("5 per minute")
-def random_play():
-    max_limit = min(20, len(PROFILES))
-    profiles_to_run = PROFILES[:max_limit]
-    
-    RANDOM_PLATFORMS = [
-        "https://www.youtube.com/results?search_query=Khmer+Music&autoplay=1",
-        "https://www.youtube.com/results?search_query=Relaxing+Music&autoplay=1",
-        "https://www.tiktok.com/tag/foryou",
-        "https://www.tiktok.com/explore"
-    ]
-    
-    brave_path = r"C:\Program Files\BraveSoftware\Brave-Browser\Application\brave.exe"
-    
-    try:
-        for i, profile in enumerate(profiles_to_run):
-            clear_browser_sessions(profile['profile_path'])
-            chosen_url = random.choice(RANDOM_PLATFORMS)
-            cmd = [
-                brave_path,
-                f"--user-data-dir={profile['profile_path']}",
-                f"--window-size={profile['width']},{profile['height']}",
-                f"--window-position={profile['pos_x']},{profile['pos_y']}",
-                f"--user-agent={profile['user_agent']}",
-                "--force-device-scale-factor=0.75",
-                f"--lang={profile['lang']}",
-                "--autoplay-policy=no-user-gesture-required",
-                "--disable-blink-features=AutomationControlled",
-                "--hide-crash-restore-bubble",
-                chosen_url
-            ]
-            subprocess.Popen(cmd)
-            
-            if i < len(profiles_to_run) - 1:
-                time.sleep(random.uniform(1, 2))
-            
-        return redirect('/')
-    except Exception as e:
-        return f"<h3>មានបញ្ហា: {e}</h3><a href='/'>ត្រឡប់ក្រោយ</a>"
-
 @app.route('/close', methods=['POST'])
 @limiter.limit("5 per minute")
 def close_profiles():
@@ -801,155 +720,9 @@ def close_profiles():
     except Exception as e:
         return f"<h3>មានបញ្ហាក្នុងការបិទ: {e}</h3><a href='/'>ត្រឡប់ក្រោយ</a>"
 
-@app.route('/clear-tabs-random', methods=['POST'])
-@limiter.limit("5 per minute")
-def clear_tabs_random():
-    try:
-        max_limit = min(20, len(PROFILES))
-        profiles_to_process = PROFILES[:max_limit]
-        
-        for profile in profiles_to_process:
-            port = 9222 + profile['id']
-            try:
-                res = requests.get(f"http://127.0.0.1:{port}/json", timeout=2)
-                if res.status_code == 200:
-                    tabs = res.json()
-                    if len(tabs) > 2:
-                        keep_count = random.choice([1, 2])
-                        tabs_to_close = tabs[:-keep_count]
-                        
-                        for tab in tabs_to_close:
-                            tab_id = tab.get('id')
-                            if tab_id:
-                                requests.get(f"http://127.0.0.1:{port}/json/close/{tab_id}", timeout=2)
-                                time.sleep(0.1)
-            except Exception:
-                pass
-                
-        return redirect('/')
-    except Exception as e:
-        return f"<h3>មានបញ្ហាក្នុងការសម្អាត Tabs: {e}</h3><a href='/'>ត្រឡប់ក្រោយ</a>" 
-
-@app.route('/reset-ip', methods=['POST'])
-@limiter.limit("2 per minute")
-def reset_ip():
-    try:
-        subprocess.run("ipconfig /release", shell=True)
-        time.sleep(2)
-        subprocess.run("ipconfig /renew", shell=True)
-        return redirect('/')
-    except Exception as e:
-        return f"<h3>មានបញ្ហាក្នុងการ Reset IP: {e}</h3><a href='/'>ត្រឡប់ក្រោយ</a>"
-
-@app.route('/disk-cleanup', methods=['POST'])
-@limiter.limit("2 per minute")
-def disk_cleanup():
-    try:
-        subprocess.Popen("cleanmgr /sageset:1 & cleanmgr /sagerun:1", shell=True)
-        return redirect('/')
-    except Exception as e:
-        return f"<h3>មានបញ្ហាក្នុងការ Disk Cleanup: {e}</h3><a href='/'>ត្រឡប់ក្រោយ</a>"
-
-@app.route('/save-proxy', methods=['POST'])
-def save_proxy():
-    try:
-        for profile in PROFILES:
-            p_id = profile['id']
-            ip_val = request.form.get(f'ip_{p_id}', '').strip()
-            port_val = request.form.get(f'port_{p_id}', '').strip()
-            
-            if ip_val and port_val and ip_val != "127.0.0.1":
-                proxy_str = f"http://{ip_val}:{port_val}"
-                profile['proxy'] = proxy_str
-                
-                try:
-                    res = requests.get(f"http://ip-api.com/json/{ip_val}?fields=status,countryCode,timezone,country", timeout=4)
-                    data = res.json()
-                    if data.get("status") == "success":
-                        cc = data.get("countryCode", "US").upper()
-                        profile['timezone'] = data.get("timezone", "UTC")
-                        
-                        primary_langs = {
-                            "US": "en-US", "GB": "en-GB", "CA": "en-CA", "AU": "en-AU",
-                            "DK": "da-DK", "FR": "fr-FR", "DE": "de-DE", "ES": "es-ES",
-                            "IT": "it-IT", "RU": "ru-RU", "JP": "ja-JP", "KR": "ko-KR",
-                            "CN": "zh-CN", "KH": "km-KH", "TH": "th-TH", "VN": "vi-VN",
-                            "IN": "hi-IN", "NL": "nl-NL", "SE": "sv-SE", "NO": "nb-NO",
-                            "FI": "fi-FI", "PL": "pl-PL", "BR": "pt-BR", "MX": "es-MX"
-                        }
-                        profile['lang'] = primary_langs.get(cc, f"en-{cc}" if cc else "en-US")
-                    else:
-                        profile['lang'] = "en-US"
-                        profile['timezone'] = "UTC"
-                except:
-                    profile['lang'] = "en-US"
-                    profile['timezone'] = "UTC"
-            else:
-                profile['proxy'] = ""
-                profile['lang'] = "en-US"
-                profile['timezone'] = "UTC"
-
-        config_file_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "config.py")
-        config_content = '''import os
-
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-PROFILES_DIR = os.path.join(BASE_DIR, "profiles_data")
-
-if not os.path.exists(PROFILES_DIR):
-    os.makedirs(PROFILES_DIR)
-
-PROFILES = [\n'''
-
-        for profile in PROFILES:
-            config_content += f"""    {{
-        "id": {profile['id']},
-        "name": "{profile['name']}",
-        "profile_path": os.path.join(PROFILES_DIR, "profile_{profile['id']}"),
-        "width": {profile['width']}, "height": {profile['height']}, "pos_x": {profile['pos_x']}, "pos_y": {profile['pos_y']},
-        "lang": "{profile['lang']}", "timezone": "{profile['timezone']}", "theme": "{profile['theme']}",
-        "user_agent": "{profile['user_agent']}",
-        "browser_type": "{profile['browser_type']}",
-        "proxy": "{profile['proxy']}"
-    }},\n"""
-
-        config_content += "]\n"
-
-        with open(config_file_path, 'w', encoding='utf-8') as f:
-            f.write(config_content)
-
-        return redirect('/')
-    except Exception as e:
-        return f"<h3>មានបញ្ហា: {e}</h3><a href='/'>ត្រឡប់ក្រោយ</a>"
-
 @app.route('/admin')
 def admin_panel():
     return render_template('admin.html')    
-
-@app.route('/test-proxy/<int:profile_id>', methods=['POST'])
-@limiter.limit("10 per minute")
-def test_proxy(profile_id):
-    profile = next((p for p in PROFILES if p['id'] == profile_id), None)
-    if not profile or not profile.get('proxy'):
-        return {"status": "error", "message": "មិនទាន់មាន Proxy!"}
-    
-    proxy_str = profile['proxy'].strip()
-    
-    if not proxy_str.startswith("http://") and not proxy_str.startswith("https://"):
-        proxies = {
-            "http": f"http://{proxy_str}",
-            "https": f"http://{proxy_str}"
-        }
-    else:
-        proxies = {
-            "http": proxy_str,
-            "https": proxy_str   
-        }
-        
-    type_check = requests.get("https://ipinfo.io/json", proxies=proxies, timeout=10)
-    if type_check.status_code == 200:
-        data = type_check.json()
-        return {"status": "success", "country": f"{data.get('country', 'Unknown')} ({data.get('ip', 'Unknown')})"}
-    return {"status": "fail"}
 
 if __name__ == '__main__':
     app.run(debug=True)
